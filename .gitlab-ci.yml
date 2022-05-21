@@ -1,0 +1,100 @@
+# Copyright (C) 2022  Christian Berger
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Which Docker image shall be used on the GitLab runner?
+image: registry.git.chalmers.se/courses/dit638/students/docker/docker:19.03.3
+
+# Details about how to connect to the Docker service to run this build.
+variables:
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_TLS_CERTDIR: ""
+  DOCKER_CLI_EXPERIMENTAL: enabled
+  BUILDX_URL: https://github.com/docker/buildx/releases/download/v0.8.2/buildx-v0.8.2.linux-amd64
+  BUILDX_PLATFORM: linux/amd64,linux/arm/v7
+  BUILDX_BUILDER: platformbuilder
+services:
+  - name: registry.git.chalmers.se/courses/dit638/students/docker/docker:19.03.3-dind
+    alias: docker
+    command: ["--experimental"]
+
+stages:
+  - build
+  - deploy
+
+# Display information before we start the build.
+before_script:
+  - docker info
+  - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+
+  #Shows we have emulator support or not
+  - docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+  - docker run --rm -t arm32v6/alpine uname -m
+  #Make dir for BuildX
+  - mkdir -p ~/.docker/cli-plugins/
+  # Using docker version to check that experimental features are enabled on server. 
+  - docker version
+  - wget -O $HOME/.docker/cli-plugins/docker-buildx https://github.com/docker/buildx/releases/download/v0.7.1/buildx-v0.7.1.linux-amd64
+  #- cd ~/.docker/cli-plugins/ mv buildx-buildx-v0.7.1.linux-amd64 docker-buildx 
+  - chmod 755 $HOME/.docker/cli-plugins/docker-buildx
+  - docker buildx version 
+  - cd $CI_PROJECT_DIR
+  
+  # After the plugin has been installed correctly, you need to set up a builder context 
+  # that handles all the various hardware emulations that are available on your platform:
+
+# This section describes what shall be done to build and test the project.
+build-and-test:
+  tags:
+    - docker-build
+  stage: build
+# If the commit is tagged, never run this job, otherwise run it on every other push
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: never
+    - if: $CI_PIPELINE_SOURCE == "push"
+  script:
+    - mkdir coverage/
+    - docker build -t my_container -f Dockerfile .
+    - docker create -ti --name dummy my_container bash
+    - docker cp dummy:/usr/bin/coverage.xml $PWD
+    - docker cp dummy:/usr/bin/cov.html $PWD/coverage
+    - docker cp dummy:/usr/bin/scan/ $PWD/scan-build-results
+  coverage: /^\s*lines:\s*\d+.\d+\%/
+  artifacts:
+    name: ${CI_JOB_NAME}-${CI_COMMIT_REF_NAME}-${CI_COMMIT_SHA}
+    expire_in: never
+    paths:
+      - coverage/
+      - scan-build-results/
+    reports:
+      cobertura: coverage.xml
+
+# This section describes what shall be done to deploy artefacts from the project.
+release:
+  tags:
+    - docker-build
+  stage: deploy
+# Run this job if the commit is tagged, and if the commit tag follows semantiv versioning, determined by regex
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/
+  script:
+    #- docker build -f Dockerfile -t "$CI_REGISTRY_IMAGE":"$CI_COMMIT_TAG" .
+    #- docker push "$CI_REGISTRY_IMAGE":"$CI_COMMIT_TAG"
+    # Handles all the various hardware emulations that are available on your platform
+    - DOCKER_CLI_EXPERIMENTAL=enabled docker buildx create --name platformbuilder --use
+    - DOCKER_CLI_EXPERIMENTAL=enabled docker buildx inspect --bootstrap platformbuilder
+    - DOCKER_CLI_EXPERIMENTAL=enabled docker buildx build --platform "linux/amd64,linux/arm/v7,linux/arm64" -t "$CI_REGISTRY_IMAGE":"$CI_COMMIT_TAG" --push .
+  
+
