@@ -1,6 +1,4 @@
 # Team 11 Lightning McQueen
-[![pipeline status](https://git.chalmers.se/courses/dit638/students/2022-group-11/badges/main/pipeline.svg)](https://git.chalmers.se/courses/dit638/students/2022-group-11/-/commits/main)
-[![coverage report](https://git.chalmers.se/courses/dit638/students/2022-group-11/badges/main/coverage.svg)](https://git.chalmers.se/courses/dit638/students/2022-group-11/-/commits/main)
 
 
 ##### DIT638 Cyber physical Systems and Systems of Systems
@@ -24,8 +22,6 @@ Cmake, Make and a C++ compiler, which can be installed with these packages:
 
 ---
 First you must clone this repository into a folder on your computer. Navigate to the folder you want to clone the repo to in your terminal then run the following command:
-
-    git clone git@git.chalmers.se:courses/dit638/students/2022-group-11.git
 
 Inside the folder you cloned the repo into there will now be a folder called **2022-group-11**. Move into this folder:
 
