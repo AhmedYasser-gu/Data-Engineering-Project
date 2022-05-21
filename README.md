@@ -21,11 +21,10 @@ Cmake, Make and a C++ compiler, which can be installed with these packages:
     sudo apt-get install build-essential cmake git
 
 ---
-First you must clone this repository into a folder on your computer. Navigate to the folder you want to clone the repo to in your terminal then run the following command:
+- First you must clone this repository into a folder on your computer. Navigate to the folder you want to clone the repo to in your terminal then run the following command.
+ 
+- Inside the folder you cloned the repo into there will now be a folder called **2022-group-11**. Move into this folder.
 
-Inside the folder you cloned the repo into there will now be a folder called **2022-group-11**. Move into this folder:
-
-    cd 2022-group-11
 
 Move into the **src** folder
 
