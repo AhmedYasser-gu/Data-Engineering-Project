@@ -25,10 +25,10 @@ std::pair<cv::Mat, cv::Mat> Reducer::reduceNoise(cv::Mat &img){
 
     // Values for yellow saturation
     int minSYellow{75};
-    int maxSYellow{212};
+    int maxSYellow{210};
 
-    int minVYellow{170};
-    int maxVYellow{242};
+    int minVYellow{172};
+    int maxVYellow{241};
     //*************************
 
     //Clone the image we're passed
@@ -57,7 +57,7 @@ std::pair<cv::Mat, cv::Mat> Reducer::reduceNoise(cv::Mat &img){
     //but we also want the combined image to show in the end
     
     //Create a new Mat object to overlay the original for the Opening/Closing
-    cv::Mat kernel = cv::getStructuringElement(cv::MORPH_RECT,cv::Size(5, 5));
+    cv::Mat kernel = cv::getStructuringElement(cv::MORPH_RECT,cv::Size(4, 4));
     //Closing
     cv::morphologyEx(yellowMask, yellowMask, cv::MORPH_CLOSE, kernel);
     //and OPening, to reduce noise.
